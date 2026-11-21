@@ -1,0 +1,63 @@
+{
+ "cast": {
+  "ALEX": "ALEX (17-year-old boy, messy brown hair, brown eyes, bright orange hoodie, grey backpack)",
+  "NINA": "NINA (8-year-old girl, two brown pigtails with yellow ribbons, yellow jacket, pink backpack)"
+ },
+ "chat_me": ["Alex"],
+ "refs": {
+  "alex_ref.png": "Character reference sheet on a plain light grey background: ALEX full body front view on the left, and on the right a grid of six head close-ups with clearly different expressions: calm smile, bored, confused, terrified, crying with tears, determined",
+  "nina_ref.png": "Character reference sheet on a plain light grey background: NINA full body front view on the left, and on the right a grid of six head close-ups with clearly different expressions: giggling, curious, worried, scared, crying, relieved"
+ },
+ "scenes": [
+  {
+   "loc": "classroom",
+   "setting": "inside classroom 104 on the first floor, beige walls, big windows facing a grassy courtyard, wooden desks, bright late-morning daylight, NOT night",
+   "narration": "Your little sister is three floors above you. And your whole school just went silent.",
+   "text": "3 FLOORS",
+   "accent": "yellow",
+   "focus": [0.35, 0.75],
+   "images": [
+    {"file": "k1_1.png", "prompt": "Wide shot, camera at the back of the room: ALEX sitting at his desk glancing up at the ceiling, uneasy, the classroom strangely silent", "refs": ["alex_ref.png"]},
+    {"file": "k1_2.png", "prompt": "Medium shot from the front of the room: ALEX turning his head toward the door with wide alarmed eyes", "refs": ["alex_ref.png"]},
+    {"file": "k1_3.png", "prompt": "Seen from INSIDE the classroom, looking out through the big window frame at the courtyard: a lone student standing very still on the grass", "refs": []}
+   ],
+   "fx": [],
+   "widgets": [{"type": "pill", "text": "ROOM 104 · 10:42 AM"}]
+  },
+  {
+   "loc": "classroom",
+   "setting": "inside classroom 104 on the first floor, beige walls, big windows facing a grassy courtyard, wooden desks, bright late-morning daylight, NOT night",
+   "narration": "Then your phone buzzes under the desk. It's Nina. She writes: Alex? Why is the teacher screaming?",
+   "focus": [0.5, 0.85],
+   "chat": [
+    {"from": "Nina", "msg": "Alex?"},
+    {"from": "Nina", "msg": "Why is the teacher screaming?"}
+   ],
+   "lines": [
+    {"who": "NARRATOR", "t": "Then your phone buzzes under the desk. It's Nina."},
+    {"who": "NARRATOR", "t": "She writes: Alex? Why is the teacher screaming?", "show": 2}
+   ],
+   "images": [
+    {"file": "k2_1.png", "prompt": "ALEX at the bottom of the frame glancing down at a phone hidden under his desk, eyebrows raised in surprise; the upper half of the frame is calm classroom wall", "refs": ["alex_ref.png"]},
+    {"file": "k2_2.png", "prompt": "NINA hiding under her small desk typing on a phone, terrified, the classroom door rattling behind her", "refs": ["nina_ref.png"], "loc": "classroom_3b", "setting": "third floor classroom 3B for young children, colorful drawings on the walls, small desks, bright late-morning daylight, NOT night"},
+    {"file": "k2_3.png", "prompt": "Close-up of ALEX's face lit by the phone screen, deep worried frown, a plain neutral background", "refs": ["alex_ref.png"], "anchor": false}
+   ],
+   "fx": [],
+   "widgets": [{"type": "bar", "label": "BATTERY", "from": 40, "to": 12}]
+  },
+  {
+   "loc": "hallway",
+   "setting": "first floor school hallway, beige walls, blue metal lockers, grey and white checkered floor, ceiling lights off, red emergency lamps on the walls, daylight from a window at the far end, NOT night",
+   "narration": "You slip out the back door. The hallway is empty, and something is dragging itself around the corner.",
+   "text": "DON'T LOOK",
+   "accent": "red",
+   "focus": [0.5, 0.55],
+   "images": [
+    {"file": "k3_1.png", "prompt": "Wide shot from the end of the hallway: ALEX slipping quietly out of a classroom door, glancing back over his shoulder", "refs": ["alex_ref.png"]},
+    {"file": "k3_2.png", "prompt": "ALEX frozen against the lockers, terrified, eyes darting toward the corner; the long shadow of a crawling figure stretches across the floor", "refs": ["alex_ref.png"]}
+   ],
+   "fx": ["alarm", "flicker"],
+   "widgets": [{"type": "pulse", "label": "YOUR PULSE", "from": 78, "to": 128, "y": 330}]
+  }
+ ]
+}
