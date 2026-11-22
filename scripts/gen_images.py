@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Sequential image generation with Codex, with character references and per-location ANCHOR frames.
+"""Sequential image generation with Codex (default) or Gemini (--engine gemini, Antigravity CLI),
+with character references and per-location ANCHOR frames.
 
-Never run this in parallel: concurrent `codex exec` runs mix up their output files.
+Never run two Codex jobs in parallel: concurrent `codex exec` runs mix up their output files.
+One Codex run and one Gemini run on DIFFERENT files at the same time is fine (e.g. when Codex hits its limit).
 
 scenes.json (see templates/scenes_example.json):
   "cast":  {"ALEX": "ALEX (17-year-old boy, messy brown hair, orange hoodie)", ...}   optional, name -> fixed description
@@ -105,6 +107,58 @@ def codex_generate(folder, model, out, prompt, ref_files, anchored):
     return False
 
 
+def find_agy():
+    for p in (os.environ.get("AGY_BIN"), "/Applications/Gemini.app/Contents/Helpers/agy",
+              "/Applications/Antigravity.app/Contents/Helpers/agy"):
+        if p and os.path.exists(p):
+            return p
+    import shutil
+    return shutil.which("agy")
+
+
+def gemini_generate(folder, model, out, prompt, ref_files, anchored):
+    """Gemini via the Antigravity CLI (`agy`). Its agent can only make images through an image subagent, which
+    keeps running after the CLI returns and saves into ~/.gemini/antigravity-cli/brain/<conversation>/ —
+    so we read the conversation id from the stream and poll that folder. Shell commands are NOT allowed."""
+    import glob, shutil, time
+    agy = find_agy()
+    if not agy:
+        sys.exit("Antigravity CLI (agy) not found; install Gemini/Antigravity or set AGY_BIN")
+    work = tempfile.mkdtemp(prefix="storygem_")
+    names = []
+    for r in ref_files:  # references are copied into the agent's working folder
+        shutil.copy(os.path.join(folder, r), os.path.join(work, os.path.basename(r)))
+        names.append(os.path.basename(r))
+    n_char = len(ref_files) - (1 if anchored else 0)
+    note = (CHAR_NOTE if n_char > 0 else "") + (ANCHOR_NOTE if anchored else "")
+    if names:
+        note += f"Reference files in the current directory: {', '.join(names)}. "
+    task = (f"Create ONE image with the image-generator subagent (invoke_subagent) or generate_image. {note}"
+            f"After invoking, wait until it has finished, then finish. Image description: {prompt}")
+    allow = ["read_file", "view_file", "list_dir", "generate_image", "invoke_subagent", "manage_subagents",
+             "wait", "wait_5_seconds", "finish"]
+    for _ in range(2):
+        try:
+            p = subprocess.run([agy, "-p", task, "--model", model, "--mode", "accept-edits",
+                                "--settings", json.dumps({"permissions": {"allow": allow}}),
+                                "--output-format", "stream-json", "--print-timeout", "400s"],
+                               cwd=work, capture_output=True, text=True, timeout=460)
+            conv = json.loads(p.stdout.splitlines()[0]).get("conversation_id")
+        except Exception:
+            conv = None
+        if not conv:
+            continue
+        brain = os.path.expanduser(f"~/.gemini/antigravity-cli/brain/{conv}")
+        for _ in range(30):  # up to ~2.5 min after the CLI returns
+            imgs = sorted(glob.glob(f"{brain}/*.png") + glob.glob(f"{brain}/*.jp*g"), key=os.path.getmtime)
+            if imgs:
+                time.sleep(2)  # let the write finish
+                subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", imgs[-1], out], check=True)
+                return True
+            time.sleep(5)
+    return False
+
+
 def md5(path):
     return hashlib.md5(open(path, "rb").read()).hexdigest()
 
@@ -114,9 +168,18 @@ def main():
     ap.add_argument("folder", help="project folder containing scenes.json")
     ap.add_argument("files", nargs="*", help="only (re)generate these file names")
     ap.add_argument("--style", choices=sorted(STYLES), default=os.environ.get("STORY_STYLE", "anime2"))
-    ap.add_argument("--model", default=os.environ.get("CODEX_IMAGE_MODEL", DEFAULT_MODEL))
+    ap.add_argument("--engine", choices=["codex", "gemini"], default=os.environ.get("STORY_ENGINE", "codex"),
+                    help="image engine: codex (default) or gemini (Antigravity CLI); a different engine can run "
+                         "at the same time on different files, e.g. when one hits its usage limit")
+    ap.add_argument("--model", default=None,
+                    help="model id (codex default: $CODEX_IMAGE_MODEL or built-in; gemini default: $GEMINI_IMAGE_MODEL "
+                         "or gemini-4-hydrogen-medium)")
     ap.add_argument("--dry-run", action="store_true", help="print the job list with resolved refs/anchors; no Codex call")
     a = ap.parse_args()
+    if a.model is None:
+        a.model = (os.environ.get("GEMINI_IMAGE_MODEL", "gemini-4-hydrogen-medium") if a.engine == "gemini"
+                   else os.environ.get("CODEX_IMAGE_MODEL", DEFAULT_MODEL))
+    generate = gemini_generate if a.engine == "gemini" else codex_generate
     if a.style not in STYLES:
         sys.exit(f"unknown style {a.style!r}; choose from {sorted(STYLES)}")
     if os.path.isfile(a.folder):  # a path to a scenes json file is accepted too
@@ -147,7 +210,7 @@ def main():
                 anchors[job["loc"]] = f
             continue
         for _ in range(2):  # a duplicate of another file means Codex mixed outputs: retry once
-            ok = codex_generate(a.folder, a.model, out, job["prompt"], refs, anchored)
+            ok = generate(a.folder, a.model, out, job["prompt"], refs, anchored)
             dup = ok and any(md5(out) == md5(os.path.join(a.folder, g)) for g in os.listdir(a.folder)
                              if g.endswith(".png") and g != f)
             if ok and not dup:

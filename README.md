@@ -4,7 +4,9 @@ A Claude Code skill that turns an idea into faceless, vertical (1080x1920) anima
 
 ## Requirements
 - Claude Code
-- Codex CLI, logged in (image generation runs through `codex exec`)
+- Codex CLI, logged in (image generation runs through `codex exec`), and/or
+- Gemini via the Antigravity CLI (`agy`, signed in) for `--engine gemini`: slower (a few minutes per image) but a
+  good fallback when Codex hits its usage limit. Images are read from `~/.gemini/antigravity-cli/brain/`.
 - `ffmpeg` and `ffprobe` on PATH
 - Python 3 with Pillow (for `render.py` only)
 - A fal.ai key in the `FAL_KEY` environment variable (for `voice.py` only)
@@ -23,6 +25,7 @@ python3 -m venv .venv && . .venv/bin/activate && pip install Pillow
 mkdir -p series/part1 && cp templates/scenes_example.json series/part1/scenes.json
 python3 scripts/gen_images.py series/part1 --dry-run   # job list with refs and anchors, calls nothing
 python3 scripts/gen_images.py series/part1             # sequential, resumable (only missing files)
+python3 scripts/gen_images.py series/part1 --engine gemini k8_1.png k8_2.png   # Gemini for some files
 export FAL_KEY=...                                     # never commit this
 python3 scripts/voice.py run series/part1 --voice Brian
 python3 scripts/render.py series/part1                 # -> series/part1/part1.mp4

@@ -26,6 +26,7 @@ Every later step must obey this file. Do not start outlining until the user appr
 ## 3. Character reference sheets (6 expressions)
 Put one entry per character in `"refs"` of scenes.json: a full-body front view plus six head close-ups with clearly different expressions (e.g. smile, bored, confused, terrified, crying, determined). Generate them first and let the user approve them:
 `python3 scripts/gen_images.py <folder>` generates refs first (they are the first jobs).
+Engines: Codex (default, ~1 min/image) or `--engine gemini` (Antigravity CLI, a few min/image). If Codex reports a usage limit, switch the remaining files to Gemini, or split the list: one Codex run and one Gemini run on different files can run at the same time (never two Codex runs).
 Put the fixed descriptions in `"cast"`: names in prompts are expanded to them automatically.
 
 ## 4. Anchor scenes (consistent rooms)
