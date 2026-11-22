@@ -87,7 +87,7 @@ def resolve_refs(job, anchors):
 def codex_generate(folder, model, out, prompt, ref_files, anchored):
     work = tempfile.mkdtemp(prefix="storygen_")
     args = ["codex", "exec", "--skip-git-repo-check", "--sandbox", "workspace-write",
-            "-m", model, "-c", 'model_reasoning_effort="medium"']
+            "-m", model, "-c", f'model_reasoning_effort="{os.environ.get("CODEX_EFFORT", "low")}"']  # low saves quota
     note = ""
     n_char = len(ref_files) - (1 if anchored else 0)
     for r in ref_files:
